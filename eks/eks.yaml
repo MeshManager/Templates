@@ -51,6 +51,6 @@ managedNodeGroups:
     tags:
       eksctl.io/nodegroup-name: "was"
     subnets:
-      - was-a:
-      - was-b:
-      - was-c:
+      - was-a
+      - was-b
+      - was-c
