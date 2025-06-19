@@ -31,7 +31,7 @@ eksctl create cluster -f eks-prac-env-add.yaml
 echo "Cluster Creation Complete!"
 
 echo "Setting alb Configuration"
-Sleep(3);
+sleep 3;
 
 eksctl create iamserviceaccount  \
     --cluster=$CLUSTER_NAME \
