@@ -14,6 +14,8 @@ export PRIVATE_SUBNET_3_ID=$(echo $outputs | jq -r '.[] | select(.OutputKey=="Pr
 export CLUSTER_NAME="mesh-manager-eks"
 export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 
+# 이 부분은 private cluster endpoint로 접근 허용할 CIDR을 적을 것
+export ALLOWED_CIDR="10.10.0.0/16"
 
 # 결과 출력
 echo "VPC_STACK: $VPC_STACK"
@@ -29,6 +31,10 @@ envsubst < eks.yaml > eks-prac-env-add.yaml
 eksctl create cluster -f eks-prac-env-add.yaml
 
 echo "Cluster Creation Complete!"
+
+export eks_sg=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.resourcesVpcConfig.clusterSecurityGroupId")
+
+aws ec2 authorize-security-group-ingress --group-id $eks_sg --protocol tcp --port 443 --cidr $ALLOWED_CIDR
 
 echo "Setting alb Configuration"
 sleep 3;
