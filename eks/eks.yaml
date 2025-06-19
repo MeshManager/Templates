@@ -5,7 +5,7 @@ metadata:
   region: ap-northeast-2
   version: "1.32"
   tags:
-    Environment: "Testing"
+    Environment: "Production"
 addons:
   - name: vpc-cni
     version: latest
@@ -27,6 +27,9 @@ vpc:
         id: $PRIVATE_SUBNET_2_ID
       was-c:
         id: $PRIVATE_SUBNET_3_ID
+  clusterEndpoints:
+    publicAccess: false
+    privateAccess: true
 
 managedNodeGroups:
   - name: was
