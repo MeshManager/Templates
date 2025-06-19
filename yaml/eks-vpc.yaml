@@ -1,10 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: CloudFormation template to create VPC with public subnets in Soeul region for EKS
+Description: CloudFormation template to create VPC with public subnets in Seoul region for EKS
 Parameters:
   Region:
     Type: String
     Default: ap-northeast-2
-    Description: AWS Soeul Region
+    Description: AWS Seoul Region
+
 Resources:
   VPC:
     Type: 'AWS::EC2::VPC'
@@ -48,7 +49,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.0.0.0/20'
+      CidrBlock: '10.10.0.0/20'
       AvailabilityZone: !Sub '${Region}a'
       MapPublicIpOnLaunch: true
       Tags:
@@ -79,7 +80,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: mesh-manager-subnet-public2-ap-northeast-2c
+          Value: mesh-manager-subnet-public3-ap-northeast-2c
         - Key: kubernetes.io/role/elb
           Value: 1
 
@@ -95,13 +96,12 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
-  PublicSubnet2RouteTableAssociation:
+  PublicSubnet3RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref PublicSubnet3
       RouteTableId: !Ref PublicRouteTable
 
-  
   NAT1EIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -151,13 +151,13 @@ Resources:
       SubnetId: !Ref PublicSubnet3
       Tags:
         - Key: Name
-          Value: NAT-GW-AZ3c
+          Value: NAT-GW-AZ2c
 
   PrivateSubnet1:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.1.48.0/20' 
+      CidrBlock: '10.10.48.0/20'
       AvailabilityZone: !Sub '${Region}a'
       Tags:
         - Key: Name
@@ -169,7 +169,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.1.64.0/20'
+      CidrBlock: '10.10.64.0/20'
       AvailabilityZone: !Sub '${Region}b'
       Tags:
         - Key: Name
@@ -181,14 +181,13 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.1.80.0/20'
+      CidrBlock: '10.10.80.0/20'
       AvailabilityZone: !Sub '${Region}c'
       Tags:
         - Key: Name
           Value: eks-subnet-private3-ap-northeast-2c
         - Key: kubernetes.io/role/internal-elb
           Value: 1
-
 
   PrivateRouteTable1:
     Type: 'AWS::EC2::RouteTable'
@@ -257,7 +256,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.1.96.0/20' 
+      CidrBlock: '10.10.96.0/20'
       AvailabilityZone: !Sub '${Region}a'
       Tags:
         - Key: Name
@@ -269,7 +268,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.1.112.0/20'
+      CidrBlock: '10.10.112.0/20'
       AvailabilityZone: !Sub '${Region}b'
       Tags:
         - Key: Name
@@ -281,7 +280,7 @@ Resources:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPC
-      CidrBlock: '10.1.128.0/20'
+      CidrBlock: '10.10.128.0/20'
       AvailabilityZone: !Sub '${Region}c'
       Tags:
         - Key: Name
@@ -301,7 +300,7 @@ Resources:
       SubnetId: !Ref PrivateSubnetDB2
       RouteTableId: !Ref PrivateRouteTable2
 
-  PrivateSubnetDB2RouteTableAssociation:
+  PrivateSubnetDB3RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref PrivateSubnetDB3
@@ -316,7 +315,7 @@ Outputs:
 
   PublicSubnet1Id:
     Description: 'Public Subnet 1 (AZ-a) ID'
-    Value: !Ref PublicSubnet1 
+    Value: !Ref PublicSubnet1
     Export:
       Name: !Sub '${AWS::StackName}-PublicSubnetAZA'
 
@@ -351,19 +350,19 @@ Outputs:
       Name: !Sub '${AWS::StackName}-PrivateSubnetAZC'
 
   PrivateSubnetDB1Id:
-    Description: 'Private Subnet 1 (AZ-a) ID'
+    Description: 'Private DB Subnet 1 (AZ-a) ID'
     Value: !Ref PrivateSubnetDB1
     Export:
       Name: !Sub '${AWS::StackName}-PrivateDBSubnetAZA'
 
   PrivateSubnetDB2Id:
-    Description: 'Private Subnet 2 (AZ-b) ID'
+    Description: 'Private DB Subnet 2 (AZ-b) ID'
     Value: !Ref PrivateSubnetDB2
     Export:
       Name: !Sub '${AWS::StackName}-PrivateDBSubnetAZB'
 
   PrivateSubnetDB3Id:
-    Description: 'Private Subnet 2 (AZ-c) ID'
+    Description: 'Private DB Subnet 3 (AZ-c) ID'
     Value: !Ref PrivateSubnetDB3
     Export:
       Name: !Sub '${AWS::StackName}-PrivateDBSubnetAZC'
