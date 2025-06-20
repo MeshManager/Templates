@@ -9,13 +9,11 @@ Resources:
         - '*.meshmanagers.com'
         - '*.teleport.meshmanagers.com'
       DomainValidationOptions:
-        - DomainName: meshmanagers.com
-          HostedZoneId: Z04465822212TLUE60WTL
         - DomainName: '*.meshmanagers.com'
           HostedZoneId: Z04465822212TLUE60WTL
         - DomainName: '*.teleport.meshmanagers.com'
           HostedZoneId: Z04465822212TLUE60WTL
-      KeyAlgorithm: RSA-2048
+      KeyAlgorithm: RSA_2048
       Tags:
         - Key: Environment
           Value: Production
