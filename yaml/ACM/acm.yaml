@@ -4,7 +4,6 @@ Resources:
     Properties:
       DomainName: meshmanagers.com
       ValidationMethod: DNS
-      CertificateTransparencyLoggingPreference: DISABLED
       SubjectAlternativeNames:
         - '*.meshmanagers.com'
         - '*.teleport.meshmanagers.com'

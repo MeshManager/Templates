@@ -8,7 +8,7 @@ envsubst < dynamodb-iam.yaml > dynamodb-iam-env-add.yaml
 aws cloudformation create-stack \
   --stack-name teleport-dynamodb-policy \
   --region ap-northeast-2 \
-  --template-body file://dynamodb-iam.yaml
+  --template-body file://dynamodb-iam-env-add.yaml
 
 # S3 정책 생성
 aws cloudformation create-stack \
