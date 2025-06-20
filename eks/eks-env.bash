@@ -40,6 +40,12 @@ aws ec2 authorize-security-group-ingress --group-id $eks_sg --protocol tcp --por
 echo "Setting alb Configuration"
 sleep 3;
 
+curl -O https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.13.0/docs/install/iam_policy.json
+
+aws iam create-policy \
+    --policy-name AWSLoadBalancerControllerIAMPolicy \
+    --policy-document file://iam_policy.json
+
 eksctl create iamserviceaccount  \
     --cluster=$CLUSTER_NAME \
     --namespace=kube-system \
@@ -49,16 +55,15 @@ eksctl create iamserviceaccount  \
     --override-existing-serviceaccounts \
     --approve
 
-#Helm Repo Update
+helm repo add eks https://aws.github.io/eks-charts
 
-helm repo add eks https://aws.github.io/eks-charts
-helm repo add eks https://aws.github.io/eks-charts
+helm repo update eks
 
 helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-	-n kube-system \
-	--set clusterName=$CLUSTER_NAME \
-	--set serviceAccount.create=false \
-	--set serviceAccount.name=aws-load-balancer-controller \
-	--set image.repository=602401143452.dkr.ecr.ap-northeast-2.amazonaws.com/amazon/aws-load-balancer-controller \
-	--set region=ap-northeast-2 \
-	--set vpcId=$VPC_ID
+  -n kube-system \
+  --set clusterName=$CLUSTER_NAME \
+  --set serviceAccount.create=false \
+  --set serviceAccount.name=aws-load-balancer-controller \
+  --version 1.13.0 \
+  --set region=ap-northeast-2 \
+  --set vpcId=$VPC_ID
