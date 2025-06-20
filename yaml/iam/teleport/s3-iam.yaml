@@ -1,0 +1,37 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: IAM Policy for Teleport S3 Session Bucket Access
+
+Resources:
+  TeleportS3SessionBucketPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: Grants Teleport access to S3 session bucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: "BucketActions"
+            Effect: "Allow"
+            Action:
+              - "s3:PutEncryptionConfiguration"
+              - "s3:PutBucketVersioning"
+              - "s3:ListBucketVersions"
+              - "s3:ListBucketMultipartUploads"
+              - "s3:ListBucket"
+              - "s3:GetEncryptionConfiguration"
+              - "s3:GetBucketVersioning"
+              - "s3:CreateBucket"
+            Resource: "arn:aws:s3:::teleport-session-bucket"
+          - Sid: "ObjectActions"
+            Effect: "Allow"
+            Action:
+              - "s3:GetObjectVersion"
+              - "s3:GetObjectRetention"
+              - "s3:*Object"
+              - "s3:ListMultipartUploadParts"
+              - "s3:AbortMultipartUpload"
+            Resource: "arn:aws:s3:::teleport-session-bucket/*"
+
+Outputs:
+  PolicyARN:
+    Description: ARN of the created IAM policy
+    Value: !Ref TeleportS3SessionBucketPolicy
