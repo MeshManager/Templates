@@ -32,7 +32,8 @@ eksctl create cluster -f eks-prac-env-add.yaml
 
 echo "Cluster Creation Complete!"
 
-export eks_sg=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.resourcesVpcConfig.clusterSecurityGroupId")
+export eks_sg=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.resourcesVpcConfig.clusterSecurityGroupId" --output text)
+echo "Security Group ID: $eks_sg" 
 
 aws ec2 authorize-security-group-ingress --group-id $eks_sg --protocol tcp --port 443 --cidr $ALLOWED_CIDR
 
