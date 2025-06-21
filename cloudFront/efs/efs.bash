@@ -21,7 +21,7 @@ echo "PRIVATE_DB_SUBNET_2_ID (AZ-b): $PRIVATE_DB_SUBNET_2_ID"
 echo "PRIVATE_DB_SUBNET_3_ID (AZ-c): $PRIVATE_DB_SUBNET_3_ID"
 
 # 보안그룹 세팅
-export $EKS_SG=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.resourcesVpcConfig.clusterSecurityGroupId" --output text)
+export EKS_SG=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.resourcesVpcConfig.clusterSecurityGroupId" --output text)
 echo "EKS Security Group ID: $EKS_SG"
 
 envsubst < efs.yaml > efs-env-add.yaml
