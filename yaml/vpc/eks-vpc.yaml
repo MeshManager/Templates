@@ -288,23 +288,34 @@ Resources:
         - Key: kubernetes.io/role/internal-elb
           Value: 1
 
+  PrivateRouteTableDB:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: eks-rtb-private-db
+
+  PrivateRouteDB:
+    Type: 'AWS::EC2::Route'
+
   PrivateSubnetDB1RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref PrivateSubnetDB1
-      RouteTableId: !Ref PrivateRouteTable1
+      RouteTableId: !Ref PrivateRouteTableDB
 
   PrivateSubnetDB2RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref PrivateSubnetDB2
-      RouteTableId: !Ref PrivateRouteTable2
+      RouteTableId: !Ref PrivateRouteTableDB
 
   PrivateSubnetDB3RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
       SubnetId: !Ref PrivateSubnetDB3
-      RouteTableId: !Ref PrivateRouteTable3
+      RouteTableId: !Ref PrivateRouteTableDB
 
 Outputs:
   VPCId:
