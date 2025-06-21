@@ -38,13 +38,6 @@ Resources:
             Condition:
               Bool:
                 elasticfilesystem:AccessedViaMountTarget: "true"
-          - Sid: DenyInsecureTransport
-            Effect: Deny
-            Principal: "*"
-            Action: "*"
-            Condition:
-              Bool:
-                aws:SecureTransport: "false"
 
   # 3개 AZ에 마운트 타겟 생성
   MountTargetA:
