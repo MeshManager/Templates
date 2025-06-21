@@ -7,6 +7,9 @@ Resources:
   EFSMountTargetSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
+      FileSystemTags:
+        - Key: Name
+          Value: eks-efs
       GroupDescription: Security group for EFS mount targets
       VpcId: $VPC_ID
       SecurityGroupIngress:
