@@ -296,9 +296,6 @@ Resources:
         - Key: Name
           Value: eks-rtb-private-db
 
-  PrivateRouteDB:
-    Type: 'AWS::EC2::Route'
-
   PrivateSubnetDB1RouteTableAssociation:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
