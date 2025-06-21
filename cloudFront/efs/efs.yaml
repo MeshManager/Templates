@@ -24,7 +24,7 @@ Resources:
       Encrypted: true
       LifecyclePolicies:
         - TransitionToIA: AFTER_30_DAYS
-        - TransitionToPrimaryStorageClass: AFTER_90_DAYS
+        - TransitionToArchive: AFTER_90_DAYS
       FileSystemPolicy:
         Version: '2012-10-17'
         Statement:
