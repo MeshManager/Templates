@@ -34,7 +34,9 @@ Resources:
           - Sid: AllowWriteViaMountTarget
             Effect: Allow
             Principal: "*"
-            Action: elasticfilesystem:ClientWrite
+            Action:
+              - elasticfilesystem:ClientWrite
+              - elasticfilesystem:ClientMount
             Condition:
               Bool:
                 elasticfilesystem:AccessedViaMountTarget: "true"
