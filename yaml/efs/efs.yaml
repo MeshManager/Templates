@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: EFS File System with Dynamic Security Group Configuration
+
+Resources:
+
+  # EFS용 보안 그룹 생성
+  EFSMountTargetSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for EFS mount targets
+      VpcId: $VPC_ID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          SourceSecurityGroupId: $EKS_SG
+      # 아웃바운드는 기본적으로 전체 허용 (CloudFormation 기본 설정)
+
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      PerformanceMode: generalPurpose
+      ThroughputMode: elastic
+      Encrypted: true
+      LifecyclePolicies:
+        - TransitionToIA: AFTER_30_DAYS
+        - TransitionToPrimaryStorageClass: AFTER_90_DAYS
+      FileSystemPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowWriteViaMountTarget
+            Effect: Allow
+            Principal: "*"
+            Action: elasticfilesystem:ClientWrite
+            Condition:
+              Bool:
+                elasticfilesystem:AccessedViaMountTarget: "true"
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "*"
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+
+  # 3개 AZ에 마운트 타겟 생성
+  MountTargetA:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: $PRIVATE_DB_SUBNET_1_ID
+      SecurityGroups:
+        - !Ref EFSMountTargetSecurityGroup
+
+  MountTargetB:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: $PRIVATE_DB_SUBNET_2_ID
+      SecurityGroups:
+        - !Ref EFSMountTargetSecurityGroup
+
+  MountTargetC:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: $PRIVATE_DB_SUBNET_3_ID
+      SecurityGroups:
+        - !Ref EFSMountTargetSecurityGroup
+
+Outputs:
+  FileSystemId:
+    Value: !Ref EFSFileSystem
+    Description: EFS File System ID
+  SecurityGroupId:
+    Value: !Ref EFSMountTargetSecurityGroup
+    Description: EFS Security Group ID
