@@ -44,6 +44,7 @@ eksctl create addon --cluster $CLUSTER_NAME --name  aws-efs-csi-driver --version
 aws cloudformation create-stack --stack-name efs-eks-stack --template-body file://$(pwd)/efs-env-add.yaml
 
 
-
+# 참조
+# https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-efs-filesystem.html
 
 
