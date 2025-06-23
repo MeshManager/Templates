@@ -35,7 +35,7 @@ managedNodeGroups:
   - name: was
     labels:
       area: web
-    instanceType: t3.small
+    instanceType: t3.medium
     desiredCapacity: 3
     minSize: 3
     maxSize: 6
