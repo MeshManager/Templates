@@ -32,6 +32,9 @@ eksctl create cluster -f eks-prac-env-add.yaml
 
 echo "Cluster Creation Complete!"
 
+# 만약 설정 값 수정하고 싶다면
+# eksctl upgrade nodegroup --config-file=
+
 export eks_sg=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.resourcesVpcConfig.clusterSecurityGroupId" --output text)
 echo "Security Group ID: $eks_sg" 
 
