@@ -2,7 +2,7 @@
 
 export CLUSTER_NAME="mesh-manager-eks"
 
-eksctl create nodegroup --config-file=./eks-nodegroup.yaml
+eksctl create nodegroup --config-file=./eks-prac-add-env.yaml
 
 echo "기존 노드그룹 목록:"
 eksctl get nodegroups --cluster=$CLUSTER_NAME --output=json | jq -r '.[]'
