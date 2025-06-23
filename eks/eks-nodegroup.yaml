@@ -1,0 +1,23 @@
+managedNodeGroups:
+  - name: was-medium
+    labels:
+      area: web
+    instanceType: t3.medium
+    desiredCapacity: 3
+    minSize: 3
+    maxSize: 6
+    privateNetworking: true
+    volumeSize: 30
+    ssh:
+      allow: false
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        ebs: true
+        albIngress: true
+    tags:
+      eksctl.io/nodegroup-name: "was"
+    subnets:
+      - was-a
+      - was-b
+      - was-c
