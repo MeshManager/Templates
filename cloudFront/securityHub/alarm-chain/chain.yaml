@@ -56,9 +56,9 @@ Resources:
               if finding['ProductName'] != 'Prowler':
                   return
           
-              # 3. 심각도 필터링 (Critical/High/Medium)
+              # 3. 심각도 필터링 (Critical/High)
               severity = finding['Severity']['Label']
-              if severity not in ['CRITICAL', 'HIGH', 'MEDIUM']:
+              if severity not in ['CRITICAL', 'HIGH']:
                   return
           
               # 4. Slack 메시지 생성
@@ -120,7 +120,6 @@ Resources:
               Label:
                 - CRITICAL
                 - HIGH
-                - MEDIUM
       Targets:
         - Arn: !GetAtt ProwlerSlackLambdaFunction.Arn
           Id: "ProwlerSlackLambdaTarget"
