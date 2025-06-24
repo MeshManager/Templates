@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Security Hub Prowler Findings to Slack Notification System
+Parameters:
+  SlackWebhookUrl:
+    Type: String
+    Description: Enter your Slack incoming webhook URL
+
+Resources:
+  # Lambda Execution Role
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaBasicExecution
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+
+  # Lambda Function
+  ProwlerSlackLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: SecurityHub-Prowler-Slack-Notifier
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.9
+      Timeout: 10
+      MemorySize: 128
+      Environment:
+        Variables:
+          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+      Code:
+        ZipFile: |
+          import json
+          import urllib.request
+          import os
+          
+          def lambda_handler(event, context):
+              # 1. EventBridge에서 전달된 이벤트 파싱
+              finding = event['detail']['findings'][0]
+          
+              # 2. Prowler Finding 필터링
+              if finding['ProductName'] != 'Prowler':
+                  return
+          
+              # 3. 심각도 필터링 (Critical/High/Medium)
+              severity = finding['Severity']['Label']
+              if severity not in ['CRITICAL', 'HIGH', 'MEDIUM']:
+                  return
+          
+              # 4. Slack 메시지 생성
+              message = {
+                  "blocks": [
+                      {
+                          "type": "section",
+                          "text": {
+                              "type": "mrkdwn",
+                              "text": f":warning: *Security Hub Finding Alert* :warning:"
+                          }
+                      },
+                      {
+                          "type": "section",
+                          "fields": [
+                              {"type": "mrkdwn", "text": f"*제목:*\n{finding['Title']}"},
+                              {"type": "mrkdwn", "text": f"*계정:*\n{finding['AwsAccountId']}"},
+                              {"type": "mrkdwn", "text": f"*심각도:*\n{severity}"},
+                              {"type": "mrkdwn", "text": f"*리전:*\n{finding['Region']}"},
+                              {"type": "mrkdwn", "text": f"*리소스:*\n{finding['Resources'][0]['Id']}"},
+                              {"type": "mrkdwn", "text": f"*생성시간:*\n{finding['CreatedAt']}"}
+                          ]
+                      },
+                      {
+                          "type": "actions",
+                          "elements": [
+                              {
+                                  "type": "button",
+                                  "text": {"type": "plain_text", "text": "Security Hub에서 보기"},
+                                  "url": f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home?region={finding['Region']}#/findings?search=Id%3D%22{finding['Id']}%22"
+                              }
+                          ]
+                      }
+                  ]
+              }
+          
+              # 5. Slack으로 전송
+              webhook_url = os.environ['SLACK_WEBHOOK_URL']
+              data = json.dumps(message).encode('utf-8')
+              headers = {'Content-Type': 'application/json'}
+              req = urllib.request.Request(webhook_url, data=data, headers=headers)
+              urllib.request.urlopen(req)
+
+  # EventBridge Rule
+  ProwlerSecurityHubEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: "Trigger Lambda on Security Hub Prowler findings"
+      EventPattern:
+        source:
+          - aws.securityhub
+        detail-type:
+          - Security Hub Findings - Imported
+        detail:
+          findings:
+            ProductName:
+              - Prowler
+            Severity:
+              Label:
+                - CRITICAL
+                - HIGH
+                - MEDIUM
+      Targets:
+        - Arn: !GetAtt ProwlerSlackLambdaFunction.Arn
+          Id: "ProwlerSlackLambdaTarget"
+
+  # Lambda Invoke Permission
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt ProwlerSlackLambdaFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt ProwlerSecurityHubEventRule.Arn
+
+Outputs:
+  LambdaFunctionName:
+    Value: !Ref ProwlerSlackLambdaFunction
+    Description: Lambda function name
+  EventRuleName:
+    Value: !Ref ProwlerSecurityHubEventRule
+    Description: EventBridge rule name
