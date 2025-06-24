@@ -116,6 +116,7 @@ Resources:
           findings:
             ProductName:
               - Prowler
+              - Security Hub
             Severity:
               Label:
                 - CRITICAL
