@@ -53,8 +53,8 @@ Resources:
               finding = event['detail']['findings'][0]
           
               # 2. Prowler Finding 필터링
-              if finding['ProductName'] != 'Prowler':
-                  return
+              if finding['ProductName'] not in ['Prowler', 'Security Hub']:
+                return
           
               # 3. 심각도 필터링 (Critical/High)
               severity = finding['Severity']['Label']
