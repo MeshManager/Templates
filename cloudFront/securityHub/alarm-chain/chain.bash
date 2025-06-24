@@ -5,6 +5,6 @@ read -p "slack web Hook URL을 입력하세요: " PARAM_URL
 
 # CloudFormation 스택 생성
 aws cloudformation create-stack \
-  --stack-name your-stack-name \
+  --stack-name security-hub-alarm-chain \
   --template-body file://$(pwd)/chain.yaml \
   --parameters ParameterKey=Url,ParameterValue=${PARAM_URL}
