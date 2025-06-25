@@ -1,9 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Security Hub Prowler Findings to Slack Notification System
-Parameters:
-  SlackWebhookUrl:
-    Type: String
-    Description: Enter your Slack incoming webhook URL
 
 Resources:
   LambdaExecutionRole:
@@ -30,6 +26,9 @@ Resources:
               - Effect: Allow
                 Action: securityhub:BatchUpdateFindings
                 Resource: "*"
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:slack_security_hub_webhook_url*'
 
   ProwlerSlackLambdaFunction:
     Type: AWS::Lambda::Function
@@ -40,9 +39,7 @@ Resources:
       Runtime: python3.9
       Timeout: 30
       MemorySize: 256
-      Environment:
-        Variables:
-          SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
+
       Code:
         ZipFile: |
           import json
@@ -51,6 +48,22 @@ Resources:
           import boto3
           
           def lambda_handler(event, context):
+          
+              # Secrets Manager에서 Slack 웹훅 URL 조회
+              secrets_client = boto3.client('secretsmanager')
+              secret_name = 'slack_security_hub_webhook_url'
+          
+              try:
+                  get_secret_value_response = secrets_client.get_secret_value(SecretId=secret_name)
+                  secret_dict = json.loads(get_secret_value_response['SecretString'])
+                  webhook_url = secret_dict['SLACK_WEBHOOK_URL']
+              except Exception as e:
+                  print(f"Error retrieving secret: {str(e)}")
+                  raise
+          
+              # Process all findings in the event
+              for finding in event['detail']['findings']:
+          
               # Process all findings in the event
               for finding in event['detail']['findings']:
                   # 1. Filter Prowler findings
@@ -122,7 +135,6 @@ Resources:
                     }
           
                   # 5. Send to Slack
-                  webhook_url = os.environ['SLACK_WEBHOOK_URL']
                   data = json.dumps(message).encode('utf-8')
                   headers = {'Content-Type': 'application/json'}
                   req = urllib.request.Request(webhook_url, data=data, headers=headers)
