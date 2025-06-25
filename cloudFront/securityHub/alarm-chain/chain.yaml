@@ -96,6 +96,8 @@ Resources:
                     # 기본 ARN 사용
                     full_arn = finding['Id']
                   
+                  encoded_arn = urllib.parse.quote(full_arn, safe='')
+                  
                   # URL 구성 (파라미터 순서 변경)
                   console_url = (
                   f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home"
