@@ -78,27 +78,24 @@ Resources:
           
                   # 4. Build Slack message
                   # ARN 형식 변환
-                  if 'prowler' in finding.get('GeneratorId', '').lower():
-                    # Prowler 형식 ARN 생성
-                    check_name = finding['GeneratorId'].split('.')[-1]
-                    account_id = finding['AwsAccountId']
-                    region = finding['Region']
-                    resource_id = finding['Resources'][0]['Id'].split(':')[-1][:12]  # 리소스 ID 축약
-                    
-                    # Prowler 스타일 ID 생성 (예: prowler-s3_bucket_cross_account_access-760135347993-ap-northeast-2-16c194976)
-                    prowler_id = f"prowler-{check_name}-{account_id}-{region}-{resource_id}"
-                    
-                    # 전체 ARN 조립
-                    full_arn = (
-                    f"arn:aws:securityhub:{region}::product/prowler/prowler/{prowler_id}"
-                    )
+                  if finding['ProductName'] == 'Prowler':
+                    # Prowler용 ARN 포맷: arn:aws:securityhub:{region}::product/prowler/prowler/{finding_id}
+                    full_arn = f"arn:aws:securityhub:{finding['Region']}::product/prowler/prowler/{finding['Id']}"
                   else:
-                    # 기본 ARN 사용
+                    # Security Hub 네이티브 Findings
                     full_arn = finding['Id']
+          
+                  # 고정된 search 파라미터
+                  search_params = (
+                  "RecordState%3D%255Coperator%255C%253AEQUALS%255C%253AACTIVE"
+                  "%26WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANEW"
+                  "%26WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANOTIFIED"
+                  )
                   
+                  # ARN 인코딩
                   encoded_arn = urllib.parse.quote(full_arn, safe='')
                   
-                  # URL 구성 (파라미터 순서 변경)
+                  # 콘솔 URL 생성
                   console_url = (
                   f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home"
                   f"?region={finding['Region']}#/findings?"
