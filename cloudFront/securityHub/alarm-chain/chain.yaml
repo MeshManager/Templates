@@ -6,7 +6,6 @@ Parameters:
     Description: Enter your Slack incoming webhook URL
 
 Resources:
-  # Lambda Execution Role
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -28,8 +27,10 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action: securityhub:BatchUpdateFindings
+                Resource: "*"
 
-  # Lambda Function
   ProwlerSlackLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -37,8 +38,8 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Runtime: python3.9
-      Timeout: 10
-      MemorySize: 128
+      Timeout: 30
+      MemorySize: 256
       Environment:
         Variables:
           SLACK_WEBHOOK_URL: !Ref SlackWebhookUrl
@@ -47,62 +48,85 @@ Resources:
           import json
           import urllib.request
           import os
+          import boto3
           
           def lambda_handler(event, context):
-              # 1. EventBridge에서 전달된 이벤트 파싱
-              finding = event['detail']['findings'][0]
+              # Process all findings in the event
+              for finding in event['detail']['findings']:
+                  # 1. Filter Prowler findings
+                  if finding['ProductName'] not in ['Prowler', 'Security Hub']:
+                      continue
           
-              # 2. Prowler Finding 필터링
-              if finding['ProductName'] not in ['Prowler', 'Security Hub']:
-                return
+                  # 2. Filter by severity
+                  severity = finding['Severity']['Label']
+                  if severity not in ['CRITICAL', 'HIGH']:
+                      continue
           
-              # 3. 심각도 필터링 (Critical/High)
-              severity = finding['Severity']['Label']
-              if severity not in ['CRITICAL', 'HIGH']:
-                  return
+                  # 3. Skip already notified findings
+                  if finding.get('Workflow', {}).get('Status') == 'NOTIFIED':
+                      continue
           
-              # 4. Slack 메시지 생성
-              message = {
-                  "blocks": [
-                      {
-                          "type": "section",
-                          "text": {
-                              "type": "mrkdwn",
-                              "text": f":warning: *Security Hub Finding Alert* :warning:"
-                          }
-                      },
-                      {
-                          "type": "section",
-                          "fields": [
-                              {"type": "mrkdwn", "text": f"*제목:*\n{finding['Title']}"},
-                              {"type": "mrkdwn", "text": f"*계정:*\n{finding['AwsAccountId']}"},
-                              {"type": "mrkdwn", "text": f"*심각도:*\n{severity}"},
-                              {"type": "mrkdwn", "text": f"*리전:*\n{finding['Region']}"},
-                              {"type": "mrkdwn", "text": f"*리소스:*\n{finding['Resources'][0]['Id']}"},
-                              {"type": "mrkdwn", "text": f"*생성시간:*\n{finding['CreatedAt']}"}
-                          ]
-                      },
-                      {
-                          "type": "actions",
-                          "elements": [
-                              {
-                                  "type": "button",
-                                  "text": {"type": "plain_text", "text": "Security Hub에서 보기"},
-                                  "url": f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home?region={finding['Region']}#/findings?search=Id%3D%22{finding['Id']}%22"
+                  # 4. Build Slack message
+                  message = {
+                      "blocks": [
+                          {
+                              "type": "section",
+                              "text": {
+                                  "type": "mrkdwn",
+                                  "text": ":warning: *Security Hub Finding Alert* :warning:"
                               }
-                          ]
-                      }
-                  ]
-              }
+                          },
+                          {
+                              "type": "section",
+                              "fields": [
+                                  {"type": "mrkdwn", "text": f"*제목:*\n{finding['Title']}"},
+                                  {"type": "mrkdwn", "text": f"*계정:*\n{finding['AwsAccountId']}"},
+                                  {"type": "mrkdwn", "text": f"*심각도:*\n{severity}"},
+                                  {"type": "mrkdwn", "text": f"*리전:*\n{finding['Region']}"},
+                                  {"type": "mrkdwn", "text": f"*리소스:*\n{finding['Resources'][0]['Id']}"},
+                                  {"type": "mrkdwn", "text": f"*생성시간:*\n{finding['CreatedAt']}"}
+                              ]
+                          },
+                          {
+                              "type": "actions",
+                              "elements": [
+                                  {
+                                      "type": "button",
+                                      "text": {"type": "plain_text", "text": "Security Hub에서 보기"},
+                                      "url": f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home?region={finding['Region']}#/findings?search=Id%3D%22{finding['Id']}%22"
+                                  }
+                              ]
+                          }
+                      ]
+                  }
           
-              # 5. Slack으로 전송
-              webhook_url = os.environ['SLACK_WEBHOOK_URL']
-              data = json.dumps(message).encode('utf-8')
-              headers = {'Content-Type': 'application/json'}
-              req = urllib.request.Request(webhook_url, data=data, headers=headers)
-              urllib.request.urlopen(req)
+                  # 5. Send to Slack
+                  webhook_url = os.environ['SLACK_WEBHOOK_URL']
+                  data = json.dumps(message).encode('utf-8')
+                  headers = {'Content-Type': 'application/json'}
+                  req = urllib.request.Request(webhook_url, data=data, headers=headers)
+          
+                  try:
+                      # 6. Send notification first
+                      with urllib.request.urlopen(req) as response:
+                          if response.status == 200:
+                              print(f"Slack notification sent for {finding['Id']}")
+          
+                              # 7. Update workflow status to NOTIFIED
+                              securityhub = boto3.client('securityhub')
+                              securityhub.batch_update_findings(
+                                  FindingIdentifiers=[{
+                                      'Id': finding['Id'],
+                                      'ProductArn': finding['ProductArn']
+                                  }],
+                                  Workflow={'Status': 'NOTIFIED'}
+                              )
+                              print(f"Updated workflow status for {finding['Id']}")
+                          else:
+                              raise Exception(f"Slack API error: {response.status}")
+                  except Exception as e:
+                      print(f"Error processing finding {finding['Id']}: {str(e)}")
 
-  # EventBridge Rule
   ProwlerSecurityHubEventRule:
     Type: AWS::Events::Rule
     Properties:
@@ -125,7 +149,6 @@ Resources:
         - Arn: !GetAtt ProwlerSlackLambdaFunction.Arn
           Id: "ProwlerSlackLambdaTarget"
 
-  # Lambda Invoke Permission
   LambdaInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
