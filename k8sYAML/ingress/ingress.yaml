@@ -1,0 +1,53 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: default
+  name: mesh-manger-back-ingress
+  annotations:
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:ap-northeast-2:760135347993:regional/webacl/meshmanger-backend-waf/2aecc76e-6bb2-4e01-9051-ad0ae69064c0
+spec:
+  ingressClassName: alb
+  rules:
+    - http:
+        paths:
+          - path: /crd/api/v1
+            pathType: Prefix
+            backend:
+              service:
+                name: crd-service
+                port:
+                  number: 80
+
+          - path: /istio
+            pathType: Prefix
+            backend:
+              service:
+                name: crd-service
+                port:
+                  number: 80
+
+          - path: /api/v1/management/clusters
+            pathType: Prefix
+            backend:
+              service:
+                name: cluster-management-service
+                port:
+                  number: 80
+
+          - path: /api/v1/cluster
+            pathType: Prefix
+            backend:
+              service:
+                name: cluster-service
+                port:
+                  number: 80
+
+          - path: /api/v1/agent
+            pathType: Prefix
+            backend:
+              service:
+                name: agent-service
+                port:
+                  number: 80

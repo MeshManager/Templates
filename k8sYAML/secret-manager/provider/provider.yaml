@@ -1,0 +1,230 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: cluster-mgmt-secret-provider
+  namespace: default
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "cluster-management-service-db-secret"
+        objectType: "secretsmanager"
+        jmesPath:
+          - path: host
+            objectAlias: DB_HOST
+          - path: port
+            objectAlias: DB_PORT
+          - path: database
+            objectAlias: DB_NAME
+          - path: username
+            objectAlias: DB_USERNAME
+          - path: password
+            objectAlias: DB_PASSWORD
+  secretObjects:
+    - secretName: cluster-mgmt-service-db-secret
+      type: Opaque
+      data:
+        - key: DB_HOST
+          objectName: DB_HOST
+        - key: DB_PORT
+          objectName: DB_PORT
+        - key: DB_NAME
+          objectName: DB_NAME
+        - key: DB_USERNAME
+          objectName: DB_USERNAME
+        - key: DB_PASSWORD
+          objectName: DB_PASSWORD
+
+---
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: agent-secret-provider
+  namespace: default
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "agent-service-db-secret"
+        objectType: "secretsmanager"
+        jmesPath:
+          - path: host
+            objectAlias: DB_HOST
+          - path: port
+            objectAlias: DB_PORT
+          - path: database
+            objectAlias: DB_NAME
+          - path: username
+            objectAlias: DB_USERNAME
+          - path: password
+            objectAlias: DB_PASSWORD
+  secretObjects:
+    - secretName: agent-service-db-secret
+      type: Opaque
+      data:
+        - key: DB_HOST
+          objectName: DB_HOST
+        - key: DB_PORT
+          objectName: DB_PORT
+        - key: DB_NAME
+          objectName: DB_NAME
+        - key: DB_USERNAME
+          objectName: DB_USERNAME
+        - key: DB_PASSWORD
+          objectName: DB_PASSWORD
+
+
+---
+
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: cluster-secret-provider
+  namespace: default
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "cluster-service-db-secret"
+        objectType: "secretsmanager"
+        jmesPath:
+          - path: host
+            objectAlias: DB_HOST
+          - path: port
+            objectAlias: DB_PORT
+          - path: database
+            objectAlias: DB_NAME
+          - path: username
+            objectAlias: DB_USERNAME
+          - path: password
+            objectAlias: DB_PASSWORD
+  secretObjects:
+    - secretName: cluster-service-db-secret
+      type: Opaque
+      data:
+        - key: DB_HOST
+          objectName: DB_HOST
+        - key: DB_PORT
+          objectName: DB_PORT
+        - key: DB_NAME
+          objectName: DB_NAME
+        - key: DB_USERNAME
+          objectName: DB_USERNAME
+        - key: DB_PASSWORD
+          objectName: DB_PASSWORD
+
+---
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: crd-secret-provider
+  namespace: default
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "crd-service-db-secret"
+        objectType: "secretsmanager"
+        jmesPath:
+          - path: host
+            objectAlias: DB_HOST
+          - path: port
+            objectAlias: DB_PORT
+          - path: database
+            objectAlias: DB_NAME
+          - path: username
+            objectAlias: DB_USERNAME
+          - path: password
+            objectAlias: DB_PASSWORD
+  secretObjects:
+    - secretName: crd-service-db-secret
+      type: Opaque
+      data:
+        - key: DB_HOST
+          objectName: DB_HOST
+        - key: DB_PORT
+          objectName: DB_PORT
+        - key: DB_NAME
+          objectName: DB_NAME
+        - key: DB_USERNAME
+          objectName: DB_USERNAME
+        - key: DB_PASSWORD
+          objectName: DB_PASSWORD
+
+
+---
+
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: redis-cluster-secret-provider
+  namespace: default
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "redis-auth-token-cluster-mgmt"
+        objectType: "secretsmanager"
+        jmesPath:
+          - path: username
+            objectAlias: REDIS_USERNAME
+          - path: password
+            objectAlias: REDIS_PASSWORD
+          - path: endpoint
+            objectAlias: REDIS_HOST
+          - path: port
+            objectAlias: REDIS_PORT
+
+  secretObjects:
+    - secretName: redis-auth-token-cluster-mgmt
+      type: Opaque
+      data:
+        - key: REDIS_USERNAME
+          objectName: REDIS_USERNAME
+        - key: REDIS_PASSWORD
+          objectName: REDIS_PASSWORD
+        - key: REDIS_HOST
+          objectName: REDIS_HOST
+        - key: REDIS_PORT
+          objectName: REDIS_PORT
+
+
+---
+
+
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: redis-agent-secret-provider
+  namespace: default
+spec:
+  provider: aws
+  parameters:
+    objects: |
+      - objectName: "redis-auth-token-agent"
+        objectType: "secretsmanager"
+        jmesPath:
+          - path: username
+            objectAlias: REDIS_USERNAME
+          - path: password
+            objectAlias: REDIS_PASSWORD
+          - path: endpoint
+            objectAlias: REDIS_HOST
+          - path: port
+            objectAlias: REDIS_PORT
+  secretObjects:
+    - secretName: redis-auth-token-agent
+      type: Opaque
+      data:
+        - key: REDIS_USERNAME
+          objectName: REDIS_USERNAME
+        - key: REDIS_PASSWORD
+          objectName: REDIS_PASSWORD
+        - key: REDIS_HOST
+          objectName: REDIS_HOST
+        - key: REDIS_PORT
+          objectName: REDIS_PORT
