@@ -69,13 +69,20 @@ Resources:
                   # 4. Build Slack message
                   # Extract short finding ID from ARN
                   full_id = finding['Id']
-                  short_id = full_id.split('/')[-1] if '/' in full_id else full_id
                   
-                  # Build the direct finding URL without search parameters
+                  # Fixed search parameters string (double-encoded)
+                  search_params = (
+                  "RecordState%3D%255Coperator%255C%253AEQUALS%255C%253AACTIVE"
+                  "%26WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANEW"
+                  "%26WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANOTIFIED"
+                  )
+                  
+                  # Build URL with full ARN and search parameters
                   console_url = (
                   f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home"
                   f"?region={finding['Region']}#/findings?"
                   f"selectedFindingId={urllib.parse.quote(full_id)}"
+                  f"&search={search_params}"
                   )
                   
                   message = {
