@@ -67,19 +67,15 @@ Resources:
                       continue
           
                   # 4. Build Slack message
-                  severity_encoded = urllib.parse.quote(urllib.parse.quote(severity, safe=''), safe='')
-                  region_encoded = urllib.parse.quote(urllib.parse.quote(finding['Region'], safe=''), safe='')
+                  # Extract short finding ID from ARN
+                  full_id = finding['Id']
+                  short_id = full_id.split('/')[-1] if '/' in full_id else full_id
                   
-                  # Build the new URL format
+                  # Build the direct finding URL without search parameters
                   console_url = (
                   f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home"
                   f"?region={finding['Region']}#/findings?"
-                  f"search=WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANEW%26"
-                  f"WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANOTIFIED%26"
-                  f"RecordState%3D%255Coperator%255C%253AEQUALS%255C%253AACTIVE%26"
-                  f"SeverityLabel%3D%255Coperator%255C%253AEQUALS%255C%253A{severity_encoded}%26"
-                  f"Region%3D{region_encoded}"
-                  f"&selectedFindingId={urllib.parse.quote(finding['Id'])}"
+                  f"selectedFindingId={urllib.parse.quote(full_id)}"
                   )
                   
                   message = {
@@ -108,7 +104,7 @@ Resources:
                            {
                              "type": "button",
                              "text": {"type": "plain_text", "text": "Security Hub에서 보기"},
-                             "url": console_url  # Updated URL format
+                             "url": console_url
                            }
                          ]
                         }
