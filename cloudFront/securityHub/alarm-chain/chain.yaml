@@ -68,20 +68,23 @@ Resources:
           
                   # 4. Build Slack message
                   # Extract short finding ID from ARN
-                  full_id = finding['Id']
+                  full_arn = finding['Arn']  # 'Id' 대신 'Arn' 사용
                   
-                  # Fixed search parameters string (double-encoded)
+                  # 고정된 search 파라미터 (기존과 동일)
                   search_params = (
                   "RecordState%3D%255Coperator%255C%253AEQUALS%255C%253AACTIVE"
                   "%26WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANEW"
                   "%26WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANOTIFIED"
                   )
                   
-                  # Build URL with full ARN and search parameters
+                  # ARN 인코딩 (숫자 변환 방지)
+                  encoded_arn = urllib.parse.quote(full_arn, safe='')
+                  
+                  # URL 구성 (파라미터 순서 변경)
                   console_url = (
                   f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home"
                   f"?region={finding['Region']}#/findings?"
-                  f"selectedFindingId={urllib.parse.quote(full_id)}"
+                  f"selectedFindingId={encoded_arn}"
                   f"&search={search_params}"
                   )
                   
