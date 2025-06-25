@@ -12,7 +12,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: /crd/api/v1
+          - path: /api/v1/crd
             pathType: Prefix
             backend:
               service:
@@ -20,7 +20,7 @@ spec:
                 port:
                   number: 80
 
-          - path: /istio
+          - path: /api/v1/yaml
             pathType: Prefix
             backend:
               service:
