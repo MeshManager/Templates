@@ -63,9 +63,6 @@ Resources:
           
               # Process all findings in the event
               for finding in event['detail']['findings']:
-          
-              # Process all findings in the event
-              for finding in event['detail']['findings']:
                   # 1. Filter Prowler findings
                   if finding['ProductName'] not in ['Prowler', 'Security Hub']:
                       continue
