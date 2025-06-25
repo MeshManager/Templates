@@ -67,19 +67,34 @@ Resources:
                       continue
           
                   # 4. Build Slack message
+                  severity_encoded = urllib.parse.quote(urllib.parse.quote(severity, safe=''), safe='')
+                  region_encoded = urllib.parse.quote(urllib.parse.quote(finding['Region'], safe=''), safe='')
+                  
+                  # Build the new URL format
+                  console_url = (
+                  f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home"
+                  f"?region={finding['Region']}#/findings?"
+                  f"search=WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANEW%26"
+                  f"WorkflowStatus%3D%255Coperator%255C%253AEQUALS%255C%253ANOTIFIED%26"
+                  f"RecordState%3D%255Coperator%255C%253AEQUALS%255C%253AACTIVE%26"
+                  f"SeverityLabel%3D%255Coperator%255C%253AEQUALS%255C%253A{severity_encoded}%26"
+                  f"Region%3D{region_encoded}"
+                  f"&selectedFindingId={urllib.parse.quote(finding['Id'])}"
+                  )
+                  
                   message = {
-                      "blocks": [
-                          {
-                              "type": "section",
-                              "text": {
-                                  "type": "mrkdwn",
-                                  "text": ":warning: *Security Hub Finding Alert* :warning:"
-                              }
-                          },
-                          {
-                              "type": "section",
-                              "fields": [
-                                  {"type": "mrkdwn", "text": f"*제목:*\n{finding['Title']}"},
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": ":warning: *Security Hub Finding Alert* :warning:"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "fields": [
+                        {"type": "mrkdwn", "text": f"*제목:*\n{finding['Title']}"},
                                   {"type": "mrkdwn", "text": f"*계정:*\n{finding['AwsAccountId']}"},
                                   {"type": "mrkdwn", "text": f"*심각도:*\n{severity}"},
                                   {"type": "mrkdwn", "text": f"*리전:*\n{finding['Region']}"},
@@ -89,16 +104,16 @@ Resources:
                           },
                           {
                               "type": "actions",
-                              "elements": [
-                                  {
-                                      "type": "button",
-                                      "text": {"type": "plain_text", "text": "Security Hub에서 보기"},
-                                      "url": f"https://{finding['Region']}.console.aws.amazon.com/securityhub/home?region={finding['Region']}#/findings?search=Id%3D%22{finding['Id']}%22"
-                                  }
-                              ]
-                          }
+                         "elements": [
+                           {
+                             "type": "button",
+                             "text": {"type": "plain_text", "text": "Security Hub에서 보기"},
+                             "url": console_url  # Updated URL format
+                           }
+                         ]
+                        }
                       ]
-                  }
+                    }
           
                   # 5. Send to Slack
                   webhook_url = os.environ['SLACK_WEBHOOK_URL']
