@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crd-service
+  labels:
+    app: crd-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: crd-service
+  template:
+    metadata:
+      labels:
+        app: crd-service
+    spec:
+      serviceAccountName: secret-manager-sa
+      containers:
+        - name: crd-service
+          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/crd-service:v1
+          ports:
+            - containerPort: 8084
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: crd-service-db-secret
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: crd-service-db-secret
+                  key: DB_PORT
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: crd-service-db-secret
+                  key: DB_NAME
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: crd-service-db-secret
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: crd-service-db-secret
+                  key: DB_PASSWORD
+
+          livenessProbe:
+            httpGet:
+              path: /api/v1/crd/health
+              port: 8084
+            initialDelaySeconds: 20
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /api/v1/crd/health
+              port: 8084
+            initialDelaySeconds: 40
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: crd-db-secret-vol
+              mountPath: /mnt/secrets-store
+              readOnly: true
+
+      volumes:
+        - name: crd-db-secret-vol
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: crd-secret-provider
