@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create 2 Redis clusters using ReplicationGroup with separate valid AuthTokens
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID
+    Default: vpc-008eefe95fec01204
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Comma-separated list of private subnet IDs for ElastiCache
+    Default: "subnet-04c0f32d4e6cbd13e,subnet-0c016f75f0bb9e414,subnet-0d8dc86a4a816f9d3"
+
+  EksPodSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: EKS POD Security Group
+    Default: sg-093267f201d9ef1cd
+
+Conditions:
+  IsSeoulRegion: !Equals [ !Ref "AWS::Region", "ap-northeast-2" ]
+
+Resources:
+
+  RedisAuthSecret1:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: redis-auth-token-agent
+      Description: Auth token for Agent service Redis
+      SecretString: '{"username":"default","password":"AgentRedisToken456!"}'
+      Tags:
+        - Key: Name
+          Value: redis-auth-token-agent
+
+  RedisAuthSecret2:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: redis-auth-token-cluster-mgmt
+      Description: Auth token for Cluster Mgmt service Redis
+      SecretString: '{"username":"default","password":"MgmtRedisToken789!"}'
+      Tags:
+        - Key: Name
+          Value: redis-auth-token-cluster-mgmt
+
+  RedisSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: IsSeoulRegion
+    Properties:
+      GroupDescription: Redis access from EKS pods
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 6379
+          ToPort: 6379
+          SourceSecurityGroupId: !Ref EksPodSecurityGroup
+      Tags:
+        - Key: Name
+          Value: redis-access-sg
+
+  RedisSubnetGroup:
+    Type: AWS::ElastiCache::SubnetGroup
+    Condition: IsSeoulRegion
+    Properties:
+      Description: Subnet group for ElastiCache Redis
+      SubnetIds: !Ref SubnetIds
+      CacheSubnetGroupName: redis-subnet-group
+
+  RedisReplicationGroup1:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Condition: IsSeoulRegion
+    Properties:
+      ReplicationGroupId: agent-service-redis
+      ReplicationGroupDescription: Agent service Redis with valid auth token
+      Engine: redis
+      EngineVersion: 7.0
+      CacheNodeType: cache.t3.micro
+      NumNodeGroups: 1
+      ReplicasPerNodeGroup: 0
+      AuthToken: "AgentRedisToken456!"
+      TransitEncryptionEnabled: true
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds: [!Ref RedisSecurityGroup]
+      PreferredCacheClusterAZs:
+        - ap-northeast-2a
+      AutoMinorVersionUpgrade: true
+      AutomaticFailoverEnabled: false
+      Tags:
+        - Key: Name
+          Value: agent-service-redis
+
+  RedisReplicationGroup2:
+    Type: AWS::ElastiCache::ReplicationGroup
+    Condition: IsSeoulRegion
+    Properties:
+      ReplicationGroupId: cluster-mgmt-service-redis
+      ReplicationGroupDescription: Cluster management Redis with valid auth token
+      Engine: redis
+      EngineVersion: 7.0
+      CacheNodeType: cache.t3.micro
+      NumNodeGroups: 1
+      ReplicasPerNodeGroup: 0
+      AuthToken: "MgmtRedisToken789!"
+      TransitEncryptionEnabled: true
+      CacheSubnetGroupName: !Ref RedisSubnetGroup
+      SecurityGroupIds: [!Ref RedisSecurityGroup]
+      PreferredCacheClusterAZs:
+        - ap-northeast-2c
+      AutoMinorVersionUpgrade: true
+      AutomaticFailoverEnabled: false
+      Tags:
+        - Key: Name
+          Value: cluster-mgmt-service-redis
+
+Outputs:
+
+  RedisCluster1PrimaryEndpoint:
+    Condition: IsSeoulRegion
+    Description: Primary endpoint of agent-service Redis
+    Value: !GetAtt RedisReplicationGroup1.PrimaryEndPoint.Address
+
+  RedisCluster2PrimaryEndpoint:
+    Condition: IsSeoulRegion
+    Description: Primary endpoint of cluster-management Redis
+    Value: !GetAtt RedisReplicationGroup2.PrimaryEndPoint.Address
+
+  RedisSecretNameAgent:
+    Description: Secret name for Agent Redis auth
+    Value: !Ref RedisAuthSecret1
+
+  RedisSecretNameMgmt:
+    Description: Secret name for Cluster Mgmt Redis auth
+    Value: !Ref RedisAuthSecret2
