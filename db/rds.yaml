@@ -1,0 +1,212 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Create 4 RDS MySQL Instances with Secrets Manager integration
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID
+    Default: vpc-008eefe95fec01204
+
+  SubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Subnet ID
+    Default: "subnet-04c0f32d4e6cbd13e,subnet-0c016f75f0bb9e414,subnet-0d8dc86a4a816f9d3"
+
+  EksPodSecurityGroup:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: EKS POD Security Group
+    Default: sg-093267f201d9ef1cd
+
+  DBUsername:
+    Type: String
+    Default: admin
+    Description: RDS master username
+
+  DBPassword:
+    Type: String
+    NoEcho: true
+    Default: admin1234!
+    Description: RDS master password
+
+Conditions:
+  IsSeoulRegion: !Equals [ !Ref "AWS::Region", "ap-northeast-2" ]
+
+Resources:
+  RdsSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS access for internal services
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref EksPodSecurityGroup
+      Tags:
+        - Key: Name
+          Value: rds-access-sg
+
+  RdsSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Shared Subnet Group for All RDS Instances
+      SubnetIds: !Ref SubnetIds
+      DBSubnetGroupName: shared-rds-subnet-group
+
+  ClusterServiceDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: cluster-service-db
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      Engine: mysql
+      EngineVersion: 8.0.36
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: clusterdb
+      VPCSecurityGroups: [!Ref RdsSecurityGroup]
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: cluster-service-db
+
+  ClusterServiceSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: cluster-service-db-secret
+      SecretString: !Sub |
+        {
+          "host": "${ClusterServiceDB.Endpoint.Address}",
+          "username": "${DBUsername}",
+          "password": "${DBPassword}",
+          "database": "clusterdb",
+          "port": "3306"
+        }
+
+  ClusterManagementServiceDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: cluster-management-service-db
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      Engine: mysql
+      EngineVersion: 8.0.36
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: clustermgmtdb
+      VPCSecurityGroups: [!Ref RdsSecurityGroup]
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: cluster-management-service-db
+
+  ClusterManagementServiceSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: cluster-management-service-db-secret
+      SecretString: !Sub |
+        {
+          "host": "${ClusterManagementServiceDB.Endpoint.Address}",
+          "username": "${DBUsername}",
+          "password": "${DBPassword}",
+          "database": "clustermgmt",
+          "port": "3306"
+        }
+
+  AgentServiceDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: agent-service-db
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      Engine: mysql
+      EngineVersion: 8.0.36
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: agentdb
+      VPCSecurityGroups: [!Ref RdsSecurityGroup]
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: agent-service-db
+
+  AgentServiceSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: agent-service-db-secret
+      SecretString: !Sub |
+        {
+          "host": "${AgentServiceDB.Endpoint.Address}",
+          "username": "${DBUsername}",
+          "password": "${DBPassword}",
+          "database": "agentdb",
+          "port": "3306"
+        }
+
+  CrdServiceDB:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: crd-service-db
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      Engine: mysql
+      EngineVersion: 8.0.36
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      DBName: crddb
+      VPCSecurityGroups: [!Ref RdsSecurityGroup]
+      DBSubnetGroupName: !Ref RdsSubnetGroup
+      PubliclyAccessible: false
+      MultiAZ: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: crd-service-db
+
+  CrdServiceSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: crd-service-db-secret
+      SecretString: !Sub |
+        {
+          "host": "${CrdServiceDB.Endpoint.Address}",
+          "username": "${DBUsername}",
+          "password": "${DBPassword}",
+          "database": "crddb",
+          "port": "3306"
+        }
+
+Outputs:
+  ClusterServiceEndpoint:
+    Value: !GetAtt ClusterServiceDB.Endpoint.Address
+
+  ClusterManagementEndpoint:
+    Value: !GetAtt ClusterManagementServiceDB.Endpoint.Address
+
+  AgentServiceEndpoint:
+    Value: !GetAtt AgentServiceDB.Endpoint.Address
+
+  CrdServiceEndpoint:
+    Value: !GetAtt CrdServiceDB.Endpoint.Address
+
+  ClusterServiceSecretArn:
+    Value: !Ref ClusterServiceSecret
+
+  ClusterManagementSecretArn:
+    Value: !Ref ClusterManagementServiceSecret
+
+  AgentServiceSecretArn:
+    Value: !Ref AgentServiceSecret
+
+  CrdServiceSecretArn:
+    Value: !Ref CrdServiceSecret
