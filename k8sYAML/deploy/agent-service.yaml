@@ -88,7 +88,7 @@ spec:
               value: "1.0.0"
             - name: DD_AGENT_HOST
               value: "172.20.84.42"
-          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/agent-service:15
+          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/agent-service:v15
           imagePullPolicy: IfNotPresent
           name: agent-service
           ports:
