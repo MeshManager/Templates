@@ -22,7 +22,6 @@ spec:
     type: RollingUpdate
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: agent-service
         tags.datadoghq.com/env: prod
@@ -86,7 +85,9 @@ spec:
             - name: DD_SERVICE
               value: "agent-service"
             - name: DD_VERSION
-              value: "14"
+              value: "1.0.0"
+            - name: DD_AGENT_HOST
+              value: "172.20.84.42"
           image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/agent-service:14
           imagePullPolicy: IfNotPresent
           name: agent-service

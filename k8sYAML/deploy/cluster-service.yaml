@@ -66,7 +66,9 @@ spec:
             - name: DD_SERVICE
               value: "cluster-service"
             - name: DD_VERSION
-              value: "9"
+              value: "1.0.0"
+            - name: DD_AGENT_HOST
+              value: "172.20.84.42"
           image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/cluster-service:9
           imagePullPolicy: IfNotPresent
           name: cluster-service
