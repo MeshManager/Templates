@@ -5,7 +5,7 @@ metadata:
     app: cluster-management
     tags.datadoghq.com/env: prod
     tags.datadoghq.com/service: cluster-management-service
-    tags.datadoghq.com/version: "9"
+    tags.datadoghq.com/version: "1.0.0"
   name: cluster-management-service
   namespace: default
 spec:
@@ -26,7 +26,7 @@ spec:
         app: cluster-management
         tags.datadoghq.com/env: prod
         tags.datadoghq.com/service: cluster-management-service
-        tags.datadoghq.com/version: "9"
+        tags.datadoghq.com/version: "1.0.0"
         admission.datadoghq.com/enabled: "true"
       annotations:
         admission.datadoghq.com/java-lib.version: v1.50.0

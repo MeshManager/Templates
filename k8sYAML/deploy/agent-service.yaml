@@ -5,7 +5,7 @@ metadata:
     app: agent-service
     tags.datadoghq.com/env: prod           # 환경에 맞게 설정
     tags.datadoghq.com/service: agent-service
-    tags.datadoghq.com/version: "14"
+    tags.datadoghq.com/version: "1.0.0"
   name: agent-service
   namespace: default
 spec:
@@ -26,7 +26,7 @@ spec:
         app: agent-service
         tags.datadoghq.com/env: prod
         tags.datadoghq.com/service: agent-service
-        tags.datadoghq.com/version: "14"
+        tags.datadoghq.com/version: "1.0.0"
         admission.datadoghq.com/enabled: "true"
       annotations:
         admission.datadoghq.com/java-lib.version: v1.50.0
