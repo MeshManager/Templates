@@ -53,7 +53,7 @@ spec:
               value: "1.0.0"
             - name: DD_AGENT_HOST
               value: "172.20.84.42"
-          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/crd-service:v9
+          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/crd-service:v10
           imagePullPolicy: IfNotPresent
           livenessProbe:
             failureThreshold: 3
