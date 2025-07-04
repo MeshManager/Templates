@@ -7,7 +7,7 @@ metadata:
     alb.ingress.kubernetes.io/scheme: internet-facing
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/wafv2-acl-arn: arn:aws:wafv2:ap-northeast-2:760135347993:regional/webacl/meshmanger-backend-waf/2aecc76e-6bb2-4e01-9051-ad0ae69064c0
-    alb.ingress.kubernetes.io/healthcheck-path: /api/v1/crd/health
+    alb.ingress.kubernetes.io/healthcheck-path: /health
     alb.ingress.kubernetes.io/healthcheck-port: '80'
 spec:
   ingressClassName: alb
