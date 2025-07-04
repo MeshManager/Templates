@@ -1,75 +1,95 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: crd-service
   labels:
     app: crd-service
+    tags.datadoghq.com/env: prod
+    tags.datadoghq.com/service: crd-service
+    tags.datadoghq.com/version: "1.0.0"
+  name: crd-service
+  namespace: default
 spec:
+  progressDeadlineSeconds: 600
   replicas: 1
+  revisionHistoryLimit: 10
   selector:
     matchLabels:
       app: crd-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
   template:
     metadata:
       labels:
         app: crd-service
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: crd-service
+        tags.datadoghq.com/version: "1.0.0"
+        admission.datadoghq.com/enabled: "true"
+      annotations:
+        admission.datadoghq.com/java-lib.version: v1.50.0
     spec:
-      serviceAccountName: secret-manager-sa
       containers:
-        - name: crd-service
-          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/crd-service:v1
-          ports:
-            - containerPort: 8084
-          env:
+        - env:
             - name: DB_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: crd-service-db-secret
-                  key: DB_HOST
+              valueFrom: {secretKeyRef: {key: DB_HOST, name: crd-service-db-secret}}
             - name: DB_PORT
-              valueFrom:
-                secretKeyRef:
-                  name: crd-service-db-secret
-                  key: DB_PORT
+              valueFrom: {secretKeyRef: {key: DB_PORT, name: crd-service-db-secret}}
             - name: DB_NAME
-              valueFrom:
-                secretKeyRef:
-                  name: crd-service-db-secret
-                  key: DB_NAME
+              valueFrom: {secretKeyRef: {key: DB_NAME, name: crd-service-db-secret}}
             - name: DB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: crd-service-db-secret
-                  key: DB_USERNAME
+              valueFrom: {secretKeyRef: {key: DB_USERNAME, name: crd-service-db-secret}}
             - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: crd-service-db-secret
-                  key: DB_PASSWORD
-
+              valueFrom: {secretKeyRef: {key: DB_PASSWORD, name: crd-service-db-secret}}
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_ENV
+              value: "prod"
+            - name: DD_SERVICE
+              value: "crd-service"
+            - name: DD_VERSION
+              value: "1.0.0"
+            - name: DD_AGENT_HOST
+              value: "172.20.84.42"
+          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/crd-service:v9
+          imagePullPolicy: IfNotPresent
           livenessProbe:
-            httpGet:
-              path: /api/v1/crd/health
-              port: 8084
+            failureThreshold: 3
+            httpGet: {path: /api/v1/crd/health, port: 8084, scheme: HTTP}
             initialDelaySeconds: 20
             periodSeconds: 10
-
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: crd-service
+          ports:
+            - containerPort: 8084
+              protocol: TCP
           readinessProbe:
-            httpGet:
-              path: /api/v1/crd/health
-              port: 8084
+            failureThreshold: 3
+            httpGet: {path: /api/v1/crd/health, port: 8084, scheme: HTTP}
             initialDelaySeconds: 40
             periodSeconds: 10
-
+            successThreshold: 1
+            timeoutSeconds: 1
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
           volumeMounts:
-            - name: crd-db-secret-vol
-              mountPath: /mnt/secrets-store
+            - mountPath: /mnt/secrets-store
+              name: crd-db-secret-vol
               readOnly: true
-
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: secret-manager-sa
+      serviceAccountName: secret-manager-sa
+      terminationGracePeriodSeconds: 30
       volumes:
-        - name: crd-db-secret-vol
-          csi:
+        - csi:
             driver: secrets-store.csi.k8s.io
             readOnly: true
-            volumeAttributes:
-              secretProviderClass: crd-secret-provider
+            volumeAttributes: {secretProviderClass: crd-secret-provider}
+          name: crd-db-secret-vol

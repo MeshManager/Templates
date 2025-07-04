@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cluster-service
+    tags.datadoghq.com/env: prod
+    tags.datadoghq.com/service: cluster-service
+    tags.datadoghq.com/version: "9"
+  name: cluster-service
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: cluster-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: cluster-service
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: cluster-service
+        tags.datadoghq.com/version: "9"
+        admission.datadoghq.com/enabled: "true"
+      annotations:
+        admission.datadoghq.com/java-lib.version: v1.50.0
+    spec:
+      containers:
+        - env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: DB_HOST
+                  name: cluster-service-db-secret
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PORT
+                  name: cluster-service-db-secret
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: DB_NAME
+                  name: cluster-service-db-secret
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: DB_USERNAME
+                  name: cluster-service-db-secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: cluster-service-db-secret
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_ENV
+              value: "prod"
+            - name: DD_SERVICE
+              value: "cluster-service"
+            - name: DD_VERSION
+              value: "9"
+          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/cluster-service:9
+          imagePullPolicy: IfNotPresent
+          name: cluster-service
+          ports:
+            - containerPort: 8082
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /mnt/secrets-store
+              name: cluster-db-secret-vol
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: secret-manager-sa
+      serviceAccountName: secret-manager-sa
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: cluster-secret-provider
+          name: cluster-db-secret-vol

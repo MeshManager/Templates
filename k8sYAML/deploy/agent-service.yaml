@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: agent-service
+    tags.datadoghq.com/env: prod           # 환경에 맞게 설정
+    tags.datadoghq.com/service: agent-service
+    tags.datadoghq.com/version: "14"
+  name: agent-service
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: agent-service
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: agent-service
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: agent-service
+        tags.datadoghq.com/version: "14"
+        admission.datadoghq.com/enabled: "true"
+      annotations:
+        admission.datadoghq.com/java-lib.version: v1.50.0
+    spec:
+      containers:
+        - env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: DB_HOST
+                  name: agent-service-db-secret
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PORT
+                  name: agent-service-db-secret
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  key: DB_NAME
+                  name: agent-service-db-secret
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: DB_USERNAME
+                  name: agent-service-db-secret
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: DB_PASSWORD
+                  name: agent-service-db-secret
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: REDIS_USERNAME
+                  name: redis-auth-token-agent
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: REDIS_PASSWORD
+                  name: redis-auth-token-agent
+            - name: REDIS_HOST
+              valueFrom:
+                secretKeyRef:
+                  key: REDIS_HOST
+                  name: redis-auth-token-agent
+            - name: REDIS_PORT
+              valueFrom:
+                secretKeyRef:
+                  key: REDIS_PORT
+                  name: redis-auth-token-agent
+            - name: DD_LOGS_INJECTION
+              value: "true"
+            - name: DD_ENV
+              value: "prod"
+            - name: DD_SERVICE
+              value: "agent-service"
+            - name: DD_VERSION
+              value: "14"
+          image: 760135347993.dkr.ecr.ap-northeast-2.amazonaws.com/agent-service:14
+          imagePullPolicy: IfNotPresent
+          name: agent-service
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - mountPath: /mnt/secrets-store
+              name: agent-db-secret-vol
+              readOnly: true
+            - mountPath: /mnt/secrets-redis
+              name: redis-secret-vol
+              readOnly: true
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      serviceAccount: secret-manager-sa
+      serviceAccountName: secret-manager-sa
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: agent-secret-provider
+          name: agent-db-secret-vol
+        - csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: redis-agent-secret-provider
+          name: redis-secret-vol
